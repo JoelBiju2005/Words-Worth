@@ -11,6 +11,7 @@ import {
   getPersianRugTexture,
   getBookSpineTexture,
 } from '../utils/proceduralTextures';
+import { VintageTv } from './VintageTv';
 
 // ── Rich, high-contrast antique book leather & cloth colors ─
 const BOOK_COLORS = [
@@ -763,6 +764,17 @@ export const Room: React.FC = () => {
           ))
         )}
       </group>
+
+      {/* ══════════════════════════════════════════════════════
+          7. VINTAGE BOX TV (Right wall, positioned under candelabra)
+          Floor at y = -0.80. Stand bottom rests on floor.
+          Inside right wall at x = 3.32, z = -0.60, angled slightly toward the room/desk
+          ══════════════════════════════════════════════════════ */}
+      <VintageTv
+        position={[3.32, -0.10, -0.60]}
+        rotation={[0, -Math.PI / 2 - 0.22, 0]}
+        scale={0.92}
+      />
     </group>
   );
 };
