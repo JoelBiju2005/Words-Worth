@@ -771,8 +771,8 @@ export const Room: React.FC = () => {
           Inside right wall at x = 3.32, z = -0.60, angled slightly toward the room/desk
           ══════════════════════════════════════════════════════ */}
       <VintageTv
-        position={[3.32, -0.10, -0.60]}
-        rotation={[0, -Math.PI / 2 - 0.22, 0]}
+        position={[3.12, -0.10, -0.95]}
+        rotation={[0, -0.28, 0]}
         scale={0.92}
       />
     </group>

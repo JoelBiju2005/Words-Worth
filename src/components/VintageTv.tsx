@@ -516,13 +516,9 @@ export const VintageTv: React.FC<VintageTvProps> = ({
             <boxGeometry args={[0.008, 0.61, 0.012]} />
           </mesh>
 
-          {/* Bulbous Curved CRT Screen (gentle convex sphere slice / rounded plane) */}
-          <mesh position={[0, 0, 0.028]} material={crtMaterial} castShadow receiveShadow>
-            <cylinderGeometry args={[0.42, 0.44, 0.58, 32, 1, false, -Math.PI / 2.3, Math.PI / 1.15]} />
-          </mesh>
-          {/* Front Glass Faceplate */}
-          <mesh position={[0, 0, 0.034]} material={crtMaterial}>
-            <planeGeometry args={[0.67, 0.59]} />
+          {/* CRT Screen Tube Face - cleanly seated inside the bezel */}
+          <mesh position={[0, 0, 0.024]} material={crtMaterial} castShadow receiveShadow>
+            <boxGeometry args={[0.67, 0.58, 0.02]} />
           </mesh>
 
           {/* Screen Light Emitted when turned on */}
