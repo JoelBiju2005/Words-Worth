@@ -708,3 +708,121 @@ body,
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
 }
 
+/* ── TV Proximity Prompt ──────────────────────────────────── */
+.tv-proximity-prompt {
+  position: absolute;
+  bottom: 46px;
+  right: 52px;
+  display: flex;
+  pointer-events: auto;
+  z-index: 25;
+  animation: tvPromptFloat 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes tvPromptFloat {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-5px);
+  }
+}
+
+.turn-on-tv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 26px;
+  border-radius: 30px;
+  background: rgba(16, 12, 10, 0.88);
+  border: 1.5px solid var(--gold-primary);
+  color: #fff6e0;
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), 0 0 20px rgba(212, 175, 55, 0.35);
+  backdrop-filter: blur(14px);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.turn-on-tv-btn:hover {
+  background: rgba(28, 20, 15, 0.98);
+  border-color: #ffe08a;
+  transform: scale(1.04);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.85), 0 0 28px rgba(212, 175, 55, 0.55);
+}
+
+.tv-badge {
+  background: rgba(212, 175, 55, 0.25);
+  border: 1px solid rgba(212, 175, 55, 0.6);
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  color: #f7e2a9;
+}
+
+/* ── TV Screen Zoomed View Controls ───────────────────────── */
+.tv-view-controls {
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  z-index: 25;
+}
+
+.tv-controls-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(12, 10, 9, 0.86);
+  padding: 8px 16px;
+  border-radius: 36px;
+  border: 1.2px solid rgba(212, 175, 55, 0.45);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+}
+
+.tv-toggle-power-btn,
+.tv-step-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-family: var(--font-serif);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.tv-toggle-power-btn {
+  background: rgba(212, 175, 55, 0.18);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  color: #fff6e0;
+}
+
+.tv-toggle-power-btn:hover {
+  background: rgba(212, 175, 55, 0.35);
+  border-color: #ffd875;
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.35);
+}
+
+.tv-step-back-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #d8cebd;
+}
+
+.tv-step-back-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+}
+
+

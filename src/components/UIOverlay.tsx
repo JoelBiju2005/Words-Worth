@@ -17,6 +17,12 @@ export const UIOverlay: React.FC = () => {
   const standUp = useBookStore((s) => s.standUp);
   const sitAtDesk = useBookStore((s) => s.sitAtDesk);
   const closeWindow = useBookStore((s) => s.closeWindow);
+  const isNearTv = useBookStore((s) => s.isNearTv);
+  const isTvHovered = useBookStore((s) => s.isTvHovered);
+  const tvPower = useBookStore((s) => s.tvPower);
+  const toggleTvPower = useBookStore((s) => s.toggleTvPower);
+  const turnTvOnAndZoom = useBookStore((s) => s.turnTvOnAndZoom);
+  const leaveTv = useBookStore((s) => s.leaveTv);
 
   // Audio Context for ambient library fireplace crackle / chime
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -46,7 +52,10 @@ export const UIOverlay: React.FC = () => {
             openBook();
           }
         } else if (cameraState === 'wide') {
-          if (e.key === 'Enter') {
+          if ((e.key === 'e' || e.key === 'E') && isNearTv) {
+            e.preventDefault();
+            turnTvOnAndZoom();
+          } else if (e.key === 'Enter') {
             e.preventDefault();
             sitAtDesk();
           }
@@ -55,13 +64,21 @@ export const UIOverlay: React.FC = () => {
             e.preventDefault();
             closeWindow();
           }
+        } else if (cameraState === 'tv') {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            leaveTv();
+          } else if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            toggleTvPower();
+          }
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [bookState, cameraState, nextPage, prevPage, closeBook, openBook, standUp, sitAtDesk, closeWindow]);
+  }, [bookState, cameraState, nextPage, prevPage, closeBook, openBook, standUp, sitAtDesk, closeWindow, isNearTv, turnTvOnAndZoom, leaveTv, toggleTvPower]);
 
   // Ambient sound synthesis toggle
   useEffect(() => {
@@ -214,6 +231,46 @@ export const UIOverlay: React.FC = () => {
             <span className="btn-icon">✕</span>
             <span className="btn-label">CLOSE WINDOW</span>
           </button>
+        </div>
+      )}
+
+      {/* ── TV Hover / Proximity Prompt (Shown when hovering over the TV or getting close to it) ── */}
+      {cameraState !== 'tv' && (isTvHovered || (cameraState === 'wide' && isNearTv)) && (
+        <div className="tv-proximity-prompt">
+          <button
+            className="turn-on-tv-btn watch-tv-btn"
+            onClick={turnTvOnAndZoom}
+            title="Sit in front of the TV and watch with full audio (Click or press E)"
+          >
+            <span className="tv-icon">📺</span>
+            <span className="tv-prompt-text">WATCH TV</span>
+            <span className="tv-badge">Click or [E]</span>
+          </button>
+        </div>
+      )}
+
+      {/* ── TV Screen Zoomed View Controls ── */}
+      {cameraState === 'tv' && (
+        <div className="tv-view-controls">
+          <div className="tv-controls-card">
+            <button
+              className={`tv-toggle-power-btn ${tvPower ? 'is-on' : 'is-off'}`}
+              onClick={toggleTvPower}
+              title={tvPower ? 'Turn TV off' : 'Turn TV on'}
+            >
+              <span className="btn-icon">{tvPower ? '⏸' : '▶'}</span>
+              <span className="btn-label">{tvPower ? 'PAUSE / POWER OFF' : 'POWER ON'}</span>
+            </button>
+
+            <button
+              className="tv-step-back-btn"
+              onClick={leaveTv}
+              title="Step back from the TV (Esc)"
+            >
+              <span className="btn-icon">✕</span>
+              <span className="btn-label">STEP BACK</span>
+            </button>
+          </div>
         </div>
       )}
     </div>

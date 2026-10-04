@@ -12,6 +12,7 @@ export const CameraRig: React.FC = () => {
   const { camera, size } = useThree();
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const cameraState = useBookStore((s) => s.cameraState);
+  const setIsNearTv = useBookStore((s) => s.setIsNearTv);
 
   // Targets tracked for lookAt interpolation
   const lookTargetRef = useRef(new THREE.Vector3(0, 0.6, 0));
@@ -50,24 +51,35 @@ export const CameraRig: React.FC = () => {
         duration: 1.3,
       };
     }
+    if (state === 'tv') {
+      // Direct front-facing zoom to the TV screen face, like sitting right in front of the TV
+      // TV position in Room is [3.12, -0.10, -0.95], rotation around Y is -0.28 rad (-16°)
+      // Screen world center is [2.90, 0.05, -0.71]
+      // Camera is stationed 1.15m directly along the screen normal
+      return {
+        position: new THREE.Vector3(2.58, 0.06, 0.40),
+        target: new THREE.Vector3(2.90, 0.05, -0.71),
+        duration: 1.2,
+      };
+    }
 
     // Reading preset:
-    // Scaled to match the 0.54 scale book on raised desk (+0.20) at z=-0.12, Book pos [0, 0.70, -0.63]
-    // Book center is at y≈0.58, z≈-0.46, right page center x≈0.32
-    let x = 0.32;
-    let y = 1.01;
-    let z = 0.10;
+    // Centered across both pages of the open book spread (left + right page)
+    // Book pos [0, 0.70, -0.63], Book center is at x=0, y≈0.58, z≈-0.46
+    let x = 0.0;
+    let y = 1.08;
+    let z = 0.22;
 
     if (aspect < 1.6) {
-      const factor = Math.min(1.6 / aspect, 1.38);
-      y = 0.58 + (1.01 - 0.58) * factor;
-      z = -0.46 + (0.10 - (-0.46)) * factor;
-      x = 0.33;
+      const factor = Math.min(1.6 / aspect, 1.45);
+      y = 0.58 + (1.08 - 0.58) * factor;
+      z = -0.46 + (0.22 - (-0.46)) * factor;
+      x = 0.0;
     }
 
     return {
       position: new THREE.Vector3(x, y, z),
-      target: new THREE.Vector3(x, 0.58, -0.46),
+      target: new THREE.Vector3(0.0, 0.58, -0.46),
       duration: 1.0,
     };
   };
@@ -277,6 +289,16 @@ export const CameraRig: React.FC = () => {
       const lookZ = camera.position.z + dirZ * lookDist;
 
       camera.lookAt(lookX, lookY, lookZ);
+    }
+
+    // Proximity check to the TV (TV position is roughly [3.12, -0.10, -0.95])
+    if (cameraState === 'wide' || cameraState === 'seated') {
+      const tvPos = new THREE.Vector3(3.12, 0.0, -0.95);
+      const dist = camera.position.distanceTo(tvPos);
+      // If camera is within 3.6 units of TV, trigger prompt
+      setIsNearTv(dist < 3.6);
+    } else {
+      setIsNearTv(false);
     }
   });
 

@@ -426,7 +426,24 @@ function drawParchmentBase(ctx: CanvasRenderingContext2D, width = 512, height = 
 }
 
 /**
- * Pre-caches all 9 page textures with Roman numerals baked into parchment
+ * Section titles for each page (rendered faintly on the 3D canvas texture)
+ */
+const PAGE_SECTION_TITLES: string[] = [
+  'Index & Home',
+  'About Us',
+  'Objectives & Clusters',
+  'Events',
+  'More Events',
+  'Latest Events',
+  'Pleiades 2025',
+  'Achievements',
+  'Team & Contact',
+];
+
+/**
+ * Pre-caches all 9 page textures with Roman numerals and faint section
+ * titles baked into parchment. The HTML overlay renders detailed content
+ * on top; these textures provide visual continuity on the 3D canvas.
  */
 export function initPageTextures(totalPages = 9): THREE.CanvasTexture[] {
   if (pageTexturesCache.length === totalPages) {
@@ -448,6 +465,17 @@ export function initPageTextures(totalPages = 9): THREE.CanvasTexture[] {
 
     // Reset text alignment for any future content
     ctx.textAlign = 'center';
+
+    // 2. Faint section title at the top
+    const sectionTitle = PAGE_SECTION_TITLES[i] || '';
+    if (sectionTitle) {
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = '#5c3e1e';
+      ctx.font = '700 28px "Cinzel", "Cormorant Garamond", serif';
+      ctx.letterSpacing = '3px';
+      ctx.fillText(sectionTitle.toUpperCase(), width / 2, 72);
+      ctx.globalAlpha = 1.0;
+    }
 
     // 3. Roman Numeral at bottom center (Raised so clearly visible above nav bar)
     const roman = toRoman(i + 1);

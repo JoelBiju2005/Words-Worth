@@ -1,4 +1,4 @@
-export type CameraState = 'wide' | 'seated' | 'zooming' | 'reading' | 'window';
+export type CameraState = 'wide' | 'seated' | 'zooming' | 'reading' | 'window' | 'tv';
 export type BookState = 'closed' | 'opening' | 'open' | 'closing';
 export type WindowState = 'closed' | 'opening' | 'open' | 'closing';
 
@@ -20,6 +20,17 @@ export interface BookStore {
   // Window state machine
   windowState: WindowState;
   setWindowState: (state: WindowState) => void;
+
+  // TV state machine
+  tvPower: boolean;
+  setTvPower: (on: boolean) => void;
+  toggleTvPower: () => void;
+  isNearTv: boolean;
+  setIsNearTv: (near: boolean) => void;
+  isTvHovered: boolean;
+  setIsTvHovered: (hovered: boolean) => void;
+  turnTvOnAndZoom: () => void;
+  leaveTv: () => void;
 
   // Pages
   currentPage: number;

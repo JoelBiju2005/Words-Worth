@@ -10,9 +10,12 @@ import {
   getBookCoverTexture,
   getMainBookSpineTexture,
   getMainBookSpineSideTexture,
-  initPageTextures,
   getBlankBackPageTexture,
 } from '../utils/proceduralTextures';
+import {
+  initScrapbookPageTextures,
+  getScrapbookLeftPageTexture,
+} from '../utils/scrapbookTextures';
 import { createPageCurlMaterial } from '../shaders/pageCurl';
 import { RibbonBookmarks } from './RibbonBookmarks';
 
@@ -56,7 +59,7 @@ export const Book: React.FC<BookProps> = ({
   const leatherNormalMap = useMemo(() => getLeatherNormalMap(), []);
   const spineFrontTexture = useMemo(() => getMainBookSpineTexture(), []);
   const spineSideTexture = useMemo(() => getMainBookSpineSideTexture(), []);
-  const pageTextures = useMemo(() => initPageTextures(totalPages), [totalPages]);
+  const pageTextures = useMemo(() => initScrapbookPageTextures(), []);
   const blankBackTexture = useMemo(() => getBlankBackPageTexture(), []);
   const coverTexture = useMemo(() => getBookCoverTexture(), []);
 
@@ -338,13 +341,18 @@ export const Book: React.FC<BookProps> = ({
     if (isFlipping) return;
 
     // Update left & right resting pages
-    rightPageMaterial.map = pageTextures[currentPage];
+    rightPageMaterial.map = pageTextures[currentPage] || pageTextures[0];
     rightPageMaterial.needsUpdate = true;
 
-    leftPageMaterial.map =
-      currentPage > 0 ? pageTextures[currentPage - 1] : blankBackTexture;
+    // Left page renders the visual scrapbook page corresponding to the current spread
+    const leftTex = getScrapbookLeftPageTexture(currentPage);
+    leftPageMaterial.map = leftTex;
     leftPageMaterial.needsUpdate = true;
-  }, [currentPage, isFlipping, pageTextures, blankBackTexture, leftPageMaterial, rightPageMaterial]);
+
+    // Also update inside cover so when first opened on spread 0, inside cover shows spread 0 left page
+    insideCoverMaterial.map = getScrapbookLeftPageTexture(0);
+    insideCoverMaterial.needsUpdate = true;
+  }, [currentPage, isFlipping, pageTextures, leftPageMaterial, rightPageMaterial, insideCoverMaterial]);
 
   // Click handler for closed book
   const handleBookClick = (e: ThreeEvent<MouseEvent>) => {

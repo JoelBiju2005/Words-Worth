@@ -1,6 +1,7 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
+import { useBookStore } from '../store/useBookStore';
 
 /**
  * Creates the authentic dials & channel selector texture for the right control panel
@@ -216,11 +217,141 @@ export const VintageTv: React.FC<VintageTvProps> = ({
   rotation = [0, -Math.PI / 2, 0],
   scale = 1.0,
 }) => {
-  const [powerOn, setPowerOn] = useState(false);
+  const tvPower = useBookStore((s) => s.tvPower);
+  const toggleTvPower = useBookStore((s) => s.toggleTvPower);
+  const cameraState = useBookStore((s) => s.cameraState);
+  const turnTvOnAndZoom = useBookStore((s) => s.turnTvOnAndZoom);
+  const setIsTvHovered = useBookStore((s) => s.setIsTvHovered);
   const [knobRotation, setKnobRotation] = useState(0);
-  const crtTextureRef = useRef<THREE.CanvasTexture | null>(null);
-  const crtCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const lightRef = useRef<THREE.PointLight>(null);
+
+  // Video element and Texture setup for "TV video.mp4"
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [screenTexture, setScreenTexture] = useState<THREE.CanvasTexture | null>(null);
+  const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const offscreenCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+
+  useEffect(() => {
+    const video = document.createElement('video');
+    video.src = encodeURI('/TV video.mp4');
+    video.crossOrigin = 'anonymous';
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'auto';
+    videoRef.current = video;
+
+    // Create a 480x270 canvas downscaler (matching the CRT 16:9 proportion)
+    // Downscaling from 1920x1080 to 480x270 cuts GPU upload bandwidth by 16x (~0.5MB/frame),
+    // ensuring the video decoding thread is never throttled and maintains 100% sync with audio!
+    const canvas = document.createElement('canvas');
+    canvas.width = 480;
+    canvas.height = 270;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (ctx) {
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, 480, 270);
+    }
+    offscreenCanvasRef.current = canvas;
+    offscreenCtxRef.current = ctx;
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
+    texture.format = THREE.RGBAFormat;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    setScreenTexture(texture);
+
+    const playVideo = () => {
+      if (video.paused) {
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((e) => {
+            console.warn('Playback attempt failed; retrying muted:', e);
+            video.muted = true;
+            video.play().catch(() => {});
+          });
+        }
+      }
+    };
+
+    const handleStalled = () => {
+      // If network buffer stalls or drops, resume playback as soon as data arrives
+      if (!video.paused && video.readyState < 2) {
+        console.warn('Video stalled/buffering, awaiting data...');
+      }
+    };
+
+    const handleWaiting = () => {
+      // Browser is waiting for the next frame
+    };
+
+    const handlePlaying = () => {
+      // Confirmed actively playing
+    };
+
+    video.addEventListener('waiting', handleWaiting);
+    video.addEventListener('stalled', handleStalled);
+    video.addEventListener('playing', handlePlaying);
+
+    if (video.readyState >= 2) {
+      playVideo();
+    } else {
+      video.addEventListener('canplay', playVideo, { once: true });
+    }
+
+    return () => {
+      video.removeEventListener('canplay', playVideo);
+      video.removeEventListener('waiting', handleWaiting);
+      video.removeEventListener('stalled', handleStalled);
+      video.removeEventListener('playing', handlePlaying);
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    };
+  }, []);
+
+  // Sync video audio with cameraState:
+  // When zoomed right in front of the TV (cameraState === 'tv'), unmute the video audio!
+  // When looking at the room wide/seated/reading, keep it muted so it's a subtle background visual.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (cameraState === 'tv') {
+      video.muted = false;
+      video.volume = 1.0;
+      if (video.paused && tvPower) {
+        video.play().catch((e) => {
+          console.warn('Unmute play error:', e);
+        });
+      }
+    } else {
+      video.muted = true;
+    }
+  }, [cameraState, tvPower]);
+
+  // Sync video play/pause with TV power
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (tvPower) {
+      if (video.paused) {
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.warn('Playback prevented by browser policy; trying muted fallback:', err);
+            video.muted = true;
+            video.play().catch((e) => console.error('Video play error:', e));
+          });
+        }
+      }
+    } else {
+      video.pause();
+    }
+  }, [tvPower]);
 
   // Materials matching reference image precisely:
   // 1. Warm walnut/teak wood cabinet with authentic grain and varnish finish
@@ -329,47 +460,93 @@ export const VintageTv: React.FC<VintageTvProps> = ({
   // 5. Control Panel Texture
   const controlPanelTexture = useMemo(() => createTvControlPanelTexture(), []);
 
-  // 6. Dynamic CRT Glass Screen
+  // 6. Dynamic CRT Glass Screen with Video Playback
+  const crtOffTexture = useMemo(() => {
+    const canvas = createCrtScreenTexture(false, 0);
+    return new THREE.CanvasTexture(canvas);
+  }, []);
+
   const crtMaterial = useMemo(() => {
-    const canvas = createCrtScreenTexture(powerOn, 0);
-    crtCanvasRef.current = canvas;
-    const tex = new THREE.CanvasTexture(canvas);
-    crtTextureRef.current = tex;
+    const activeMap = tvPower && screenTexture ? screenTexture : crtOffTexture;
 
     return new THREE.MeshStandardMaterial({
-      map: tex,
+      map: activeMap,
       roughness: 0.15,
       metalness: 0.1,
-      emissive: powerOn ? new THREE.Color('#9ecbf5') : new THREE.Color('#000000'),
-      emissiveIntensity: powerOn ? 0.85 : 0.0,
-      emissiveMap: powerOn ? tex : null,
+      emissive: tvPower ? new THREE.Color('#ffffff') : new THREE.Color('#000000'),
+      emissiveIntensity: tvPower ? 0.95 : 0.0,
+      emissiveMap: tvPower ? activeMap : null,
     });
-  }, [powerOn]);
+  }, [tvPower, screenTexture, crtOffTexture]);
 
-  // Frame animation for rolling CRT broadcast scanline & phosphor glow
+  const lastTimeRef = useRef(-1);
+  const lastUpdateRef = useRef(0);
+
+  // Frame animation for light flicker & offscreen canvas frame blitting
   useFrame(({ clock }) => {
-    if (powerOn && crtTextureRef.current && crtCanvasRef.current) {
-      const t = clock.getElapsedTime();
-      const newCanvas = createCrtScreenTexture(true, t);
-      const ctx = crtCanvasRef.current.getContext('2d')!;
-      ctx.drawImage(newCanvas, 0, 0);
-      crtTextureRef.current.needsUpdate = true;
-
-      // Gentle CRT phosphor flicker
+    if (tvPower) {
       if (lightRef.current) {
-        lightRef.current.intensity = 0.85 + Math.sin(t * 24) * 0.05 + Math.sin(t * 43) * 0.03;
+        const t = clock.getElapsedTime();
+        lightRef.current.intensity = 1.15 + Math.sin(t * 18) * 0.06 + Math.sin(t * 31) * 0.04;
+      }
+
+      const video = videoRef.current;
+      const ctx = offscreenCtxRef.current;
+      const canvas = offscreenCanvasRef.current;
+      const now = performance.now();
+
+      // Only draw and upload if:
+      // 1. The video is actively playing and has data
+      // 2. The video's currentTime has actually advanced to a new frame
+      // 3. At least 33ms have passed (~30 fps cap, matching 24-30fps video framerate)
+      // This completely stops CPU/GPU bus flooding and lets the video decoder run at 100% full real-time speed in perfect sync with audio!
+      if (
+        video &&
+        !video.paused &&
+        video.readyState >= video.HAVE_CURRENT_DATA &&
+        ctx &&
+        canvas &&
+        screenTexture &&
+        video.currentTime !== lastTimeRef.current &&
+        now - lastUpdateRef.current >= 33
+      ) {
+        lastTimeRef.current = video.currentTime;
+        lastUpdateRef.current = now;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        screenTexture.needsUpdate = true;
       }
     }
   });
 
   const togglePower = (e: any) => {
     e.stopPropagation();
-    setPowerOn((prev) => !prev);
-    setKnobRotation((prev) => prev + (Math.PI / 6));
+    toggleTvPower();
+    setKnobRotation((prev) => prev + Math.PI / 6);
   };
 
   return (
-    <group position={position} rotation={rotation} scale={scale}>
+    <group
+      position={position}
+      rotation={rotation}
+      scale={scale}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        if (cameraState !== 'tv') {
+          setIsTvHovered(true);
+          document.body.style.cursor = 'pointer';
+        }
+      }}
+      onPointerOut={() => {
+        setIsTvHovered(false);
+        document.body.style.cursor = 'auto';
+      }}
+      onClick={(e) => {
+        if (cameraState !== 'tv') {
+          e.stopPropagation();
+          turnTvOnAndZoom();
+        }
+      }}
+    >
       {/* ════════════════════════════════════════════════════════════════════════════
           1. MID-CENTURY WOODEN BASE STAND & TAPERED LEGS (matching reference photo)
           Floor level in Room is y = -0.80. Base stands sturdy on floor.
@@ -517,12 +694,12 @@ export const VintageTv: React.FC<VintageTvProps> = ({
           </mesh>
 
           {/* CRT Screen Tube Face - cleanly seated inside the bezel */}
-          <mesh position={[0, 0, 0.024]} material={crtMaterial} castShadow receiveShadow>
+          <mesh position={[0, 0, 0.024]} material={crtMaterial}>
             <boxGeometry args={[0.67, 0.58, 0.02]} />
           </mesh>
 
           {/* Screen Light Emitted when turned on */}
-          {powerOn && (
+          {tvPower && (
             <>
               <pointLight
                 ref={lightRef}
@@ -531,7 +708,6 @@ export const VintageTv: React.FC<VintageTvProps> = ({
                 intensity={1.25}
                 distance={4.8}
                 decay={1.8}
-                castShadow
               />
               <spotLight
                 position={[0, 0, 0.3]}
@@ -541,7 +717,6 @@ export const VintageTv: React.FC<VintageTvProps> = ({
                 angle={Math.PI / 3}
                 penumbra={0.6}
                 distance={6}
-                castShadow
               />
             </>
           )}

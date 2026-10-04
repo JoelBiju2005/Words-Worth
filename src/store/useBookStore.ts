@@ -11,6 +11,29 @@ export const useBookStore = create<BookStore>((set, get) => ({
   windowState: 'closed',
   setWindowState: (state: WindowState) => set({ windowState: state }),
 
+  // TV state machine (starts ON by default so video plays right away)
+  tvPower: true,
+  setTvPower: (on: boolean) => set({ tvPower: on }),
+  toggleTvPower: () => set((state) => ({ tvPower: !state.tvPower })),
+  isNearTv: false,
+  setIsNearTv: (near: boolean) => set({ isNearTv: near }),
+  isTvHovered: false,
+  setIsTvHovered: (hovered: boolean) => set({ isTvHovered: hovered }),
+
+  turnTvOnAndZoom: () => {
+    set({
+      tvPower: true,
+      cameraState: 'tv',
+    });
+  },
+
+  leaveTv: () => {
+    const { cameraState } = get();
+    if (cameraState === 'tv') {
+      set({ cameraState: 'wide' });
+    }
+  },
+
   currentPage: 0,
   totalPages: 9,
   isFlipping: false,
