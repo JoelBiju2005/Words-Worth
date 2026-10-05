@@ -7,34 +7,14 @@ import { WindowView } from './WindowView';
 import {
   getDeskWoodTexture,
   getFloorPlanksTexture,
-  getFramedPaintingTexture,
   getPersianRugTexture,
-  getBookSpineTexture,
 } from '../utils/proceduralTextures';
 import { VintageTv } from './VintageTv';
-
-// ── Rich, high-contrast antique book leather & cloth colors ─
-const BOOK_COLORS = [
-  new THREE.Color('#7a2228'), // Deep Crimson
-  new THREE.Color('#1b4d32'), // Forest Green
-  new THREE.Color('#1c3a63'), // Oxford Navy
-  new THREE.Color('#8a5822'), // Warm Amber Ochre
-  new THREE.Color('#4a2236'), // Burgundy Plum
-  new THREE.Color('#28453d'), // Antique Jade
-  new THREE.Color('#8c4224'), // Terracotta Rust
-  new THREE.Color('#63381e'), // Cognac Leather
-  new THREE.Color('#2e2840'), // Midnight Violet
-  new THREE.Color('#7d6849'), // Aged Parchment Cloth
-  new THREE.Color('#842a20'), // Ruby Morocco
-  new THREE.Color('#1d4240'), // Deep Teal
-];
 
 export const Room: React.FC = () => {
   const woodTexture = useMemo(() => getDeskWoodTexture(), []);
   const floorTexture = useMemo(() => getFloorPlanksTexture(), []);
-  const paintingTexture = useMemo(() => getFramedPaintingTexture(), []);
   const rugTexture = useMemo(() => getPersianRugTexture(), []);
-  const spineTexture = useMemo(() => getBookSpineTexture(), []);
 
   // ── Shared Materials ──────────────────────────────────────
   const wallMaterial = useMemo(
@@ -100,16 +80,6 @@ export const Room: React.FC = () => {
     []
   );
 
-  const frameMaterial = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: '#a6823c',
-        roughness: 0.32,
-        metalness: 0.75,
-      }),
-    []
-  );
-
   const windowGlassMaterial = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
@@ -125,66 +95,7 @@ export const Room: React.FC = () => {
     []
   );
 
-  // ── Instanced Shelf Books ─────────────────────────────────
-  // 3 rows × 18 books = 54 books total
-  const bookGeometry = useMemo(() => new THREE.BoxGeometry(0.18, 0.82, 0.30), []);
-  const shelfBookRefs = useRef<(THREE.InstancedMesh | null)[]>([null, null, null]);
 
-  const bookRowConfigs = useMemo(() => {
-    const rows: Array<{
-      matrices: THREE.Matrix4[];
-      colors: THREE.Color[];
-    }> = [];
-
-    // Reconciled shelf board positions resting on floor at y = -0.80
-    const shelfBoardYPositions = [-0.38, 0.45, 1.30];
-    const booksPerRow = 18;
-
-    for (let row = 0; row < 3; row++) {
-      const matrices: THREE.Matrix4[] = [];
-      const colors: THREE.Color[] = [];
-      const baseY = shelfBoardYPositions[row] + 0.05; // 0.05 = half of 0.10 board thickness
-
-      for (let b = 0; b < booksPerRow; b++) {
-        const m = new THREE.Matrix4();
-        const scaleY = 0.72 + (Math.sin(b * 3.7 + row) * 0.5 + 0.5) * 0.38; // Height variation
-        const scaleX = 0.75 + (Math.cos(b * 2.1) * 0.5 + 0.5) * 0.55;       // Width variation
-        const scaleZ = 0.88 + Math.random() * 0.20;
-
-        // Spread across shelf width with slight organic spacing
-        const x = -2.85 + b * 0.335 + (Math.sin(b * 4.3) * 0.02);
-        const y = baseY + (scaleY * 0.82) / 2; // Sit firmly on shelf board
-        const z = 0.17 + (Math.sin(b * 5.1) * 0.04); // Staggered depth
-        const rotY = (Math.sin(b * 7.1) * 0.05);      // Slight tilt on shelf
-        const rotZ = b % 5 === 4 ? 0.07 : (b % 7 === 6 ? -0.06 : 0); // Leaning book
-
-        m.compose(
-          new THREE.Vector3(x, y, z),
-          new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rotY, rotZ)),
-          new THREE.Vector3(scaleX, scaleY, scaleZ)
-        );
-        matrices.push(m);
-        colors.push(BOOK_COLORS[(b * 3 + row * 4) % BOOK_COLORS.length]);
-      }
-
-      rows.push({ matrices, colors });
-    }
-    return rows;
-  }, []);
-
-  // Apply instance matrices and colors on mount
-  React.useLayoutEffect(() => {
-    bookRowConfigs.forEach((row, rowIdx) => {
-      const mesh = shelfBookRefs.current[rowIdx];
-      if (!mesh) return;
-      row.matrices.forEach((mat, i) => {
-        mesh.setMatrixAt(i, mat);
-        mesh.setColorAt(i, row.colors[i]);
-      });
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    });
-  }, [bookRowConfigs]);
 
   // ── Window Interaction & Casement Sash Animation ─────────
   const windowState = useBookStore((s) => s.windowState);
@@ -331,110 +242,7 @@ export const Room: React.FC = () => {
         <boxGeometry args={[10, 0.16, 0.04]} />
       </mesh>
 
-      {/* ══════════════════════════════════════════════════════
-          2. BOOKSHELVES (back wall)
-          ══════════════════════════════════════════════════════ */}
-      <group position={[0, 0, -2.48]}>
-        {/* Bookshelf Lighting: Twin balanced mid-height diffuse fill lights (no harsh blowout) */}
-        <pointLight
-          position={[-1.4, 0.90, 0.68]}
-          color="#ffdba0"
-          intensity={0.42}
-          distance={4.5}
-          decay={1.6}
-        />
-        <pointLight
-          position={[1.4, 0.90, 0.68]}
-          color="#ffdba0"
-          intensity={0.42}
-          distance={4.5}
-          decay={1.6}
-        />
-        <pointLight
-          position={[0, 0.6, 0.6]}
-          color="#ffdba0"
-          intensity={0.5}
-          distance={4.0}
-          decay={1.8}
-        />
 
-        {/* Outer frame — Left & Right sturdy upright posts */}
-        <mesh position={[-3.15, 0.72, 0.16]} material={shelfWoodMaterial} castShadow receiveShadow>
-          <boxGeometry args={[0.12, 3.04, 0.46]} />
-        </mesh>
-        <mesh position={[3.15, 0.72, 0.16]} material={shelfWoodMaterial} castShadow receiveShadow>
-          <boxGeometry args={[0.12, 3.04, 0.46]} />
-        </mesh>
-
-        {/* Center vertical mullion divider */}
-        <mesh position={[0, 0.72, 0.15]} material={shelfWoodMaterial} castShadow receiveShadow>
-          <boxGeometry args={[0.08, 2.96, 0.44]} />
-        </mesh>
-
-        {/* Top Cornice Crown Molding */}
-        <mesh position={[0, 2.24, 0.18]} material={shelfWoodMaterial} castShadow>
-          <boxGeometry args={[6.48, 0.16, 0.50]} />
-        </mesh>
-
-        {/* Bottom Base Plinth (rests solidly on hardwood floor at y = -0.80) */}
-        <mesh position={[0, -0.72, 0.18]} material={shelfWoodMaterial} receiveShadow>
-          <boxGeometry args={[6.48, 0.16, 0.50]} />
-        </mesh>
-
-        {/* Horizontal shelf boards — thick, visible, casting distinct shadows */}
-        {[-0.38, 0.45, 1.30, 2.15].map((y, idx) => (
-          <group key={`shelf-assembly-${idx}`} position={[0, y, 0]}>
-            {/* Main shelf plank */}
-            <mesh position={[0, 0, 0.15]} material={shelfWoodMaterial} receiveShadow castShadow>
-              <boxGeometry args={[6.26, 0.10, 0.44]} />
-            </mesh>
-            {/* Front beveled nose molding strip catching highlights */}
-            <mesh position={[0, 0, 0.375]} material={shelfWoodMaterial} castShadow>
-              <boxGeometry args={[6.28, 0.11, 0.03]} />
-            </mesh>
-            {/* Under-shelf shadow recess strip */}
-            <mesh position={[0, -0.055, 0.18]}>
-              <boxGeometry args={[6.24, 0.015, 0.40]} />
-              <meshBasicMaterial color="#120a06" />
-            </mesh>
-          </group>
-        ))}
-
-        {/* Instanced book rows with embossed gold ribs & vertical AO spine texture */}
-        {bookRowConfigs.map((_, rowIdx) => (
-          <instancedMesh
-            key={`bookrow-${rowIdx}`}
-            ref={(el) => { shelfBookRefs.current[rowIdx] = el; }}
-            args={[bookGeometry, undefined, 18]}
-            castShadow
-            receiveShadow
-          >
-            <meshStandardMaterial
-              map={spineTexture}
-              roughness={0.48}
-              metalness={0.08}
-            />
-          </instancedMesh>
-        ))}
-
-        {/* Decorative library accents on shelves */}
-        {/* Bookend + bronze urn on middle shelf right */}
-        <group position={[2.75, 0.65, 0.22]}>
-          <mesh material={brassMaterial} castShadow>
-            <boxGeometry args={[0.05, 0.28, 0.22]} />
-          </mesh>
-          <mesh position={[0.08, -0.02, 0]} material={brassMaterial} castShadow>
-            <sphereGeometry args={[0.08, 16, 16]} />
-          </mesh>
-        </group>
-
-        {/* Rolled parchment scroll on bottom shelf left */}
-        <group position={[-2.75, -0.22, 0.24]} rotation={[0, 0.2, Math.PI / 2]}>
-          <mesh material={baseboardMaterial} castShadow>
-            <cylinderGeometry args={[0.05, 0.05, 0.32, 16]} />
-          </mesh>
-        </group>
-      </group>
 
       {/* ══════════════════════════════════════════════════════
           3. CASEMENT WINDOW (left wall) & MOONLIT VISTA
@@ -721,49 +529,7 @@ export const Room: React.FC = () => {
         />
       </group>
 
-      {/* ══════════════════════════════════════════════════════
-          6. FRAMED PICTURE (Back wall, right of bookshelf)
-          Positioned at eye level (y = 1.35)
-          ══════════════════════════════════════════════════════ */}
-      <group position={[3.56, 1.35, -2.55]}>
-        {/* Canvas painting with Old Master artwork */}
-        <mesh position={[0, 0, 0.006]}>
-          <planeGeometry args={[0.72, 0.90]} />
-          <meshStandardMaterial
-            map={paintingTexture}
-            roughness={0.55}
-            metalness={0.04}
-          />
-        </mesh>
 
-        {/* Inner gold fillet bevel */}
-        <mesh position={[0, 0, 0.008]} material={brassMaterial}>
-          <boxGeometry args={[0.75, 0.93, 0.008]} />
-        </mesh>
-
-        {/* Outer carved antique gold frame */}
-        <mesh position={[0, 0.49, 0.02]} material={frameMaterial}>
-          <boxGeometry args={[0.88, 0.08, 0.035]} />
-        </mesh>
-        <mesh position={[0, -0.49, 0.02]} material={frameMaterial}>
-          <boxGeometry args={[0.88, 0.08, 0.035]} />
-        </mesh>
-        <mesh position={[-0.41, 0, 0.02]} material={frameMaterial}>
-          <boxGeometry args={[0.08, 1.06, 0.035]} />
-        </mesh>
-        <mesh position={[0.41, 0, 0.02]} material={frameMaterial}>
-          <boxGeometry args={[0.08, 1.06, 0.035]} />
-        </mesh>
-
-        {/* 4 ornate corner rosette bosses */}
-        {[-0.41, 0.41].map((cx) =>
-          [-0.49, 0.49].map((cy) => (
-            <mesh key={`pframe-boss-${cx}-${cy}`} position={[cx, cy, 0.03]} material={brassMaterial}>
-              <boxGeometry args={[0.085, 0.085, 0.015]} />
-            </mesh>
-          ))
-        )}
-      </group>
 
       {/* ══════════════════════════════════════════════════════
           7. VINTAGE BOX TV (Right wall, positioned under candelabra)
