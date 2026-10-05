@@ -23,6 +23,9 @@ export const UIOverlay: React.FC = () => {
   const toggleTvPower = useBookStore((s) => s.toggleTvPower);
   const turnTvOnAndZoom = useBookStore((s) => s.turnTvOnAndZoom);
   const leaveTv = useBookStore((s) => s.leaveTv);
+  const isTrophyShelfHovered = useBookStore((s) => s.isTrophyShelfHovered);
+  const viewTrophyShelf = useBookStore((s) => s.viewTrophyShelf);
+  const leaveTrophyShelf = useBookStore((s) => s.leaveTrophyShelf);
 
   // Audio Context for ambient library fireplace crackle / chime
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -72,13 +75,18 @@ export const UIOverlay: React.FC = () => {
             e.preventDefault();
             toggleTvPower();
           }
+        } else if (cameraState === 'trophyShelf') {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            leaveTrophyShelf();
+          }
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [bookState, cameraState, nextPage, prevPage, closeBook, openBook, standUp, sitAtDesk, closeWindow, isNearTv, turnTvOnAndZoom, leaveTv, toggleTvPower]);
+  }, [bookState, cameraState, nextPage, prevPage, closeBook, openBook, standUp, sitAtDesk, closeWindow, isNearTv, turnTvOnAndZoom, leaveTv, toggleTvPower, leaveTrophyShelf]);
 
   // Ambient sound synthesis toggle
   useEffect(() => {
@@ -271,6 +279,39 @@ export const UIOverlay: React.FC = () => {
               <span className="btn-label">STEP BACK</span>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ── Trophy Shelf Hover Prompt (Shown when hovering over the trophy shelf in wide view) ── */}
+      {cameraState === 'wide' && bookState === 'closed' && isTrophyShelfHovered && (
+        <div className="trophy-shelf-proximity-prompt">
+          <button
+            className="view-trophies-btn"
+            onClick={viewTrophyShelf}
+            title="Inspect literary awards and trophies up close (Click)"
+          >
+            <span className="shelf-prompt-icon">🏆</span>
+            <span className="shelf-prompt-text">EXAMINE AWARDS</span>
+            <span className="shelf-prompt-badge">Click</span>
+          </button>
+        </div>
+      )}
+
+      {/* ── Trophy Shelf Zoomed View Controls ── */}
+      {cameraState === 'trophyShelf' && (
+        <div className="trophy-shelf-view-controls">
+          <div className="trophy-shelf-header-card">
+            <span className="trophy-shelf-title">AWARDS & RECOGNITION</span>
+            <span className="trophy-shelf-subtitle">Word's Worth Literary Society · KLE Technological University</span>
+          </div>
+          <button
+            className="close-shelf-pill-btn"
+            onClick={leaveTrophyShelf}
+            title="Step back and return to study (Esc)"
+          >
+            <span className="btn-icon">✕</span>
+            <span className="btn-label">STEP BACK</span>
+          </button>
         </div>
       )}
     </div>

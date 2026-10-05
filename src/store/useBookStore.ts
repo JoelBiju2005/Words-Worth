@@ -116,4 +116,21 @@ export const useBookStore = create<BookStore>((set, get) => ({
       set({ windowState: 'closing' });
     }
   },
+
+  isTrophyShelfHovered: false,
+  setIsTrophyShelfHovered: (hovered: boolean) => set({ isTrophyShelfHovered: hovered }),
+
+  viewTrophyShelf: () => {
+    const { cameraState, bookState } = get();
+    if (cameraState === 'wide' && bookState === 'closed') {
+      set({ cameraState: 'trophyShelf', isTrophyShelfHovered: false });
+    }
+  },
+
+  leaveTrophyShelf: () => {
+    const { cameraState } = get();
+    if (cameraState === 'trophyShelf') {
+      set({ cameraState: 'wide' });
+    }
+  },
 }));

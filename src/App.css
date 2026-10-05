@@ -825,4 +825,151 @@ body,
   color: #ffffff;
 }
 
+/* ── Trophy Shelf Hover Prompt (Floating button when hovering over shelf) ── */
+.trophy-shelf-proximity-prompt {
+  position: absolute;
+  top: 24%;
+  left: 22%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  z-index: 25;
+  animation: shelfPromptFadeIn 0.3s ease-out;
+}
+
+@keyframes shelfPromptFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -42%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.view-trophies-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(14, 10, 7, 0.90);
+  border: 1.5px solid #d4af37;
+  padding: 10px 18px;
+  border-radius: 28px;
+  color: #f7e6b5;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 0 16px rgba(212, 175, 55, 0.35);
+  backdrop-filter: blur(10px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.view-trophies-btn:hover {
+  background: rgba(28, 20, 14, 0.96);
+  border-color: #ffd975;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75), 0 0 24px rgba(212, 175, 55, 0.6);
+  transform: scale(1.05);
+}
+
+.shelf-prompt-icon {
+  font-size: 16px;
+}
+
+.shelf-prompt-text {
+  font-family: var(--font-serif);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+}
+
+.shelf-prompt-badge {
+  background: rgba(212, 175, 55, 0.22);
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 10.5px;
+  letter-spacing: 1px;
+  color: #fce7b0;
+}
+
+/* ── Trophy Shelf Zoomed View Controls ── */
+.trophy-shelf-view-controls {
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: shelfControlsSlideUp 0.4s ease-out;
+}
+
+@keyframes shelfControlsSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 15px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.trophy-shelf-header-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(12, 9, 6, 0.88);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  padding: 8px 24px;
+  border-radius: 20px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
+.trophy-shelf-title {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: #f7e6b5;
+}
+
+.trophy-shelf-subtitle {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  color: rgba(216, 206, 189, 0.75);
+  letter-spacing: 0.8px;
+  margin-top: 2px;
+}
+
+.close-shelf-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 24px;
+  background: rgba(18, 14, 11, 0.88);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  color: #f7e6b5;
+  font-family: var(--font-serif);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+}
+
+.close-shelf-pill-btn:hover {
+  background: rgba(30, 22, 16, 0.95);
+  border-color: #ffd875;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.45);
+  transform: translateY(-2px);
+}
+
 

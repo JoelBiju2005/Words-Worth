@@ -1,4 +1,4 @@
-export type CameraState = 'wide' | 'seated' | 'zooming' | 'reading' | 'window' | 'tv';
+export type CameraState = 'wide' | 'seated' | 'zooming' | 'reading' | 'window' | 'tv' | 'trophyShelf';
 export type BookState = 'closed' | 'opening' | 'open' | 'closing';
 export type WindowState = 'closed' | 'opening' | 'open' | 'closing';
 
@@ -57,4 +57,8 @@ export interface BookStore {
   standUp: () => void;
   openWindow: () => void;
   closeWindow: () => void;
+  viewTrophyShelf: () => void;
+  leaveTrophyShelf: () => void;
+  isTrophyShelfHovered: boolean;
+  setIsTrophyShelfHovered: (hovered: boolean) => void;
 }

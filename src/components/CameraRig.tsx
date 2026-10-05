@@ -61,7 +61,16 @@ export const CameraRig: React.FC = () => {
         target: new THREE.Vector3(2.90, 0.05, -0.71),
         duration: 1.2,
       };
+    }    if (state === 'trophyShelf') {
+      // Well-framed view capturing all 3 shelf tiers (Tier 1 at y=2.55, Tier 2 at y=1.85, Tier 3 at y=1.15)
+      // Unit vertical center is ~1.95m. Distance of ~2.70m along Z cleanly frames the entire unit without cropping Tier 1
+      return {
+        position: new THREE.Vector3(-2.25, 1.95, 0.15),
+        target: new THREE.Vector3(-2.25, 1.95, -2.55),
+        duration: 1.3,
+      };
     }
+
 
     // Reading preset:
     // Centered across both pages of the open book spread (left + right page)
@@ -106,8 +115,8 @@ export const CameraRig: React.FC = () => {
       camera.updateProjectionMatrix();
     }
 
-    if (cameraState === 'wide' || cameraState === 'seated') {
-      // Transitioning to wide or seated
+    if (cameraState === 'wide' || cameraState === 'seated' || cameraState === 'trophyShelf') {
+      // Transitioning to wide, seated, or trophyShelf (all allow orbit after animation)
       if (controls) {
         controls.enabled = false;
       }
@@ -263,6 +272,8 @@ export const CameraRig: React.FC = () => {
       const swayY = Math.cos(t * 0.4) * 0.02;
       controlsRef.current.target.set(swayX, 0.8 + swayY, 0);
       controlsRef.current.update();
+    } else if (cameraState === 'trophyShelf' && controlsRef.current && controlsRef.current.enabled) {
+      controlsRef.current.update();
     } else if (cameraState === 'window') {
       // Smoothly interpolate current yaw and pitch toward target with damping
       currentYawRef.current += (targetYawRef.current - currentYawRef.current) * 0.08;
@@ -302,7 +313,43 @@ export const CameraRig: React.FC = () => {
     }
   });
 
-  const canOrbit = cameraState === 'wide' || cameraState === 'seated';
+  const canOrbit = cameraState === 'wide' || cameraState === 'seated' || cameraState === 'trophyShelf';
+
+  // Orbit limits vary by camera state
+  const getOrbitLimits = () => {
+    if (cameraState === 'trophyShelf') {
+      return {
+        // Seated-rig style: look left/right along the shelf, up/down across all 3 tiers
+        minAzimuth: -Math.PI / 3.2,   // ~56° left (toward wall corner)
+        maxAzimuth: Math.PI / 3.2,     // ~56° right (toward noticeboard)
+        minPolar: Math.PI / 4.2,       // ~43° — look comfortably up at top tier and picture lights
+        maxPolar: Math.PI / 1.6,       // ~112° — look down at bottom tier
+        minDist: 0.65,                 // lean in very close to inspect individual trophies/medals
+        maxDist: 3.20,                 // step back comfortably to see the whole shelf & noticeboard
+      };
+    }
+    if (cameraState === 'seated') {
+      return {
+        minAzimuth: -Math.PI / 2.8,
+        maxAzimuth: Math.PI / 2.8,
+        minPolar: Math.PI / 4.5,
+        maxPolar: Math.PI / 1.7,
+        minDist: 0.65,
+        maxDist: 3.2,
+      };
+    }
+    // wide
+    return {
+      minAzimuth: -Math.PI / 3.4,
+      maxAzimuth: Math.PI / 4.5,
+      minPolar: Math.PI / 4.2,
+      maxPolar: Math.PI / 2.3,
+      minDist: 2.4,
+      maxDist: 5.5,
+    };
+  };
+
+  const limits = getOrbitLimits();
 
   return (
     <OrbitControls
@@ -310,12 +357,12 @@ export const CameraRig: React.FC = () => {
       enablePan={false}
       enableRotate={canOrbit}
       enableZoom={canOrbit}
-      minAzimuthAngle={cameraState === 'seated' ? -Math.PI / 2.8 : -Math.PI / 3.4}
-      maxAzimuthAngle={cameraState === 'seated' ? Math.PI / 2.8 : Math.PI / 4.5}
-      minPolarAngle={cameraState === 'seated' ? Math.PI / 4.5 : Math.PI / 4.2}
-      maxPolarAngle={cameraState === 'seated' ? Math.PI / 1.7 : Math.PI / 2.3}
-      minDistance={cameraState === 'seated' ? 0.65 : 2.4}
-      maxDistance={cameraState === 'seated' ? 3.2 : 5.5}
+      minAzimuthAngle={limits.minAzimuth}
+      maxAzimuthAngle={limits.maxAzimuth}
+      minPolarAngle={limits.minPolar}
+      maxPolarAngle={limits.maxPolar}
+      minDistance={limits.minDist}
+      maxDistance={limits.maxDist}
       dampingFactor={0.06}
       enableDamping
     />

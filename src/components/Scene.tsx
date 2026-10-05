@@ -6,6 +6,8 @@ import { BookStand } from './BookStand';
 import { Book } from './Book';
 import { CameraRig } from './CameraRig';
 
+import { BackWallDisplay } from './BackWallDisplay';
+
 export const Scene: React.FC = () => {
   return (
     <>
@@ -15,7 +17,7 @@ export const Scene: React.FC = () => {
 
       {/* ── Ambient & Interior Bounce Lighting ─────────────── */}
       {/* Primary warm ambient tone */}
-      <ambientLight color="#ffeed8" intensity={0.60} />
+      <ambientLight color="#ffeed8" intensity={0.65} />
 
       {/* Hemisphere light: warms the ceiling while bouncing floor light into the lower frame */}
       <hemisphereLight
@@ -53,6 +55,7 @@ export const Scene: React.FC = () => {
 
       {/* ── Scene Objects & Environment ────────────────────── */}
       <Room />
+      <BackWallDisplay />
       <DeskProps />
       {/* ── Scaled Book & Bookstand Group (Central anchor on expanded desk) ── */}
       <group position={[0, 0.20, -0.12]} scale={0.54}>
