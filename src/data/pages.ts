@@ -81,7 +81,7 @@ export const BOOK_PAGES_DATA: ScrapbookPageSpread[] = [
         {
           type: 'paragraph',
           title: 'About Us',
-          text: 'Word’s Worth is the English Literary Club of KLE Technological University, dedicated to celebrating language, literature, and creative expression. Our purpose is to give everyone the chance to grow as a speaker, writer, storyteller, and thinker, while discovering the joy of sharing thoughts. Driven by a passion for words, the club nurtures confidence, curiosity, leadership, and self-expression. Together, we strive to uncover the voices within us and let them echo-boldly, beautifully, and with impact.',
+          text: 'Word’s Worth is the official English Club of KLE Technological University, dedicated to cultivating a vibrant English-speaking culture on campus by promoting language proficiency, literary appreciation, and effective communication. The club provides an inclusive platform for students to enhance their public speaking, creative writing, debate, hosting (MoC), and critical thinking skills through workshops, competitions, literary events, and collaborative learning experiences. By fostering confidence, creativity, leadership, and self-expression, Word’s Worth empowers students to become articulate communicators while building a thriving literary community both within and beyond the university.',
         },
       ],
     },
