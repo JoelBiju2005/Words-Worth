@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useBookStore } from '../store/useBookStore';
 import { toRoman } from '../utils/proceduralTextures';
 
@@ -11,8 +11,7 @@ export const UIOverlay: React.FC = () => {
   const prevPage = useBookStore((s) => s.prevPage);
   const closeBook = useBookStore((s) => s.closeBook);
   const openBook = useBookStore((s) => s.openBook);
-  const soundOn = useBookStore((s) => s.soundOn);
-  const toggleSound = useBookStore((s) => s.toggleSound);
+
   const cameraState = useBookStore((s) => s.cameraState);
   const standUp = useBookStore((s) => s.standUp);
   const sitAtDesk = useBookStore((s) => s.sitAtDesk);
@@ -27,9 +26,6 @@ export const UIOverlay: React.FC = () => {
   const viewTrophyShelf = useBookStore((s) => s.viewTrophyShelf);
   const leaveTrophyShelf = useBookStore((s) => s.leaveTrophyShelf);
 
-  // Audio Context for ambient library fireplace crackle / chime
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const noiseNodeRef = useRef<AudioNode | null>(null);
 
   // Keyboard navigation
   useEffect(() => {
@@ -88,71 +84,7 @@ export const UIOverlay: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [bookState, cameraState, nextPage, prevPage, closeBook, openBook, standUp, sitAtDesk, closeWindow, isNearTv, turnTvOnAndZoom, leaveTv, toggleTvPower, leaveTrophyShelf]);
 
-  // Ambient sound synthesis toggle
-  useEffect(() => {
-    if (soundOn) {
-      try {
-        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        if (!audioCtxRef.current) {
-          audioCtxRef.current = new AudioCtx();
-        }
-        const ctx = audioCtxRef.current;
-        if (ctx.state === 'suspended') {
-          ctx.resume();
-        }
 
-        // Generate gentle warm noise (fireplace / breeze murmur)
-        const bufferSize = ctx.sampleRate * 2;
-        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        let lastOut = 0.0;
-        for (let i = 0; i < bufferSize; i++) {
-          const white = Math.random() * 2 - 1;
-          output[i] = (lastOut + 0.02 * white) / 1.02; // Brown noise filter
-          lastOut = output[i];
-          output[i] *= 0.15; // Soft volume
-        }
-
-        const whiteNoise = ctx.createBufferSource();
-        whiteNoise.buffer = noiseBuffer;
-        whiteNoise.loop = true;
-
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 400; // Warm muffled sound
-
-        const gainNode = ctx.createGain();
-        gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
-
-        whiteNoise.connect(filter);
-        filter.connect(gainNode);
-        gainNode.connect(ctx.destination);
-        whiteNoise.start();
-        noiseNodeRef.current = whiteNoise;
-      } catch (err) {
-        console.warn('Audio synthesis note:', err);
-      }
-    } else {
-      if (noiseNodeRef.current) {
-        try {
-          (noiseNodeRef.current as AudioBufferSourceNode).stop();
-        } catch {
-          // ignore
-        }
-        noiseNodeRef.current = null;
-      }
-    }
-
-    return () => {
-      if (noiseNodeRef.current) {
-        try {
-          (noiseNodeRef.current as AudioBufferSourceNode).stop();
-        } catch {
-          // ignore
-        }
-      }
-    };
-  }, [soundOn]);
 
   const isOpen = bookState === 'open';
 
@@ -160,18 +92,6 @@ export const UIOverlay: React.FC = () => {
     <div className="ui-overlay-container">
       {/* ── Bottom Control Bar (Visible when book is open) ─ */}
       <nav className={`bottom-nav-bar ${isOpen ? 'visible' : ''}`}>
-        {/* Sound Toggle */}
-        <button
-          className={`nav-btn sound-btn ${soundOn ? 'active' : ''}`}
-          onClick={toggleSound}
-          title={soundOn ? 'Mute ambient sound' : 'Enable ambient sound'}
-        >
-          <span className="btn-icon">{soundOn ? '🔊' : '🔈'}</span>
-          <span className="btn-label">SOUND: {soundOn ? 'ON' : 'OFF'}</span>
-        </button>
-
-        <div className="nav-divider"></div>
-
         {/* Previous Page Button */}
         <button
           className="nav-btn prev-btn"
@@ -180,12 +100,12 @@ export const UIOverlay: React.FC = () => {
           title="Previous Page (←)"
         >
           <span className="btn-icon">‹</span>
-          <span className="btn-label">PREVIOUS</span>
+          <span className="btn-label">PREV</span>
         </button>
 
         {/* Page Indicator */}
         <div className="page-indicator">
-          <span className="page-roman">PAGE {toRoman(currentPage + 1)}</span>
+          <span className="page-roman">{toRoman(currentPage + 1)}</span>
           <span className="page-count">
             {currentPage + 1} / {totalPages}
           </span>
@@ -202,8 +122,6 @@ export const UIOverlay: React.FC = () => {
           <span className="btn-icon">›</span>
         </button>
 
-        <div className="nav-divider"></div>
-
         {/* Close Book Button */}
         <button
           className="nav-btn close-btn"
@@ -212,7 +130,6 @@ export const UIOverlay: React.FC = () => {
           title="Close Book (Esc)"
         >
           <span className="btn-icon">✕</span>
-          <span className="btn-label">CLOSE BOOK</span>
         </button>
       </nav>
 
